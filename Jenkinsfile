@@ -61,6 +61,64 @@ pipeline {
             }
         }
 
+        // ── Stage 2b: Import Existing S3 Resources ─────────
+        stage('Import Existing Resources') {
+            steps {
+                dir("${TF_WORKING_DIR}") {
+                    sh '''
+                        echo "══════════════════════════════════════"
+                        echo "  Import Existing Resources"
+                        echo "══════════════════════════════════════"
+
+                        # Import S3 bucket if not already in state
+                        if ! terraform state list 2>/dev/null | grep -q "module.s3.aws_s3_bucket.bucket"; then
+                            echo "Importing existing S3 bucket..."
+                            terraform import module.s3.aws_s3_bucket.bucket madhan-terraform-bucket-2026-001 || true
+                        else
+                            echo "S3 bucket already in state, skipping import."
+                        fi
+
+                        # Import S3 public access block
+                        if ! terraform state list 2>/dev/null | grep -q "module.s3.aws_s3_bucket_public_access_block.public_access"; then
+                            echo "Importing S3 public access block..."
+                            terraform import module.s3.aws_s3_bucket_public_access_block.public_access madhan-terraform-bucket-2026-001 || true
+                        else
+                            echo "S3 public access block already in state, skipping."
+                        fi
+
+                        # Import S3 website configuration
+                        if ! terraform state list 2>/dev/null | grep -q "module.s3.aws_s3_bucket_website_configuration.website"; then
+                            echo "Importing S3 website config..."
+                            terraform import module.s3.aws_s3_bucket_website_configuration.website madhan-terraform-bucket-2026-001 || true
+                        else
+                            echo "S3 website config already in state, skipping."
+                        fi
+
+                        # Import S3 bucket policy
+                        if ! terraform state list 2>/dev/null | grep -q "module.s3.aws_s3_bucket_policy.public_read"; then
+                            echo "Importing S3 bucket policy..."
+                            terraform import module.s3.aws_s3_bucket_policy.public_read madhan-terraform-bucket-2026-001 || true
+                        else
+                            echo "S3 bucket policy already in state, skipping."
+                        fi
+
+                        # Import S3 objects
+                        if ! terraform state list 2>/dev/null | grep -q "module.s3.aws_s3_object.index"; then
+                            echo "Importing S3 index.html object..."
+                            terraform import module.s3.aws_s3_object.index madhan-terraform-bucket-2026-001/index.html || true
+                        fi
+
+                        if ! terraform state list 2>/dev/null | grep -q "module.s3.aws_s3_object.styles"; then
+                            echo "Importing S3 styles.css object..."
+                            terraform import module.s3.aws_s3_object.styles madhan-terraform-bucket-2026-001/styles.css || true
+                        fi
+
+                        echo "Import complete."
+                    '''
+                }
+            }
+        }
+
         // ── Stage 3: Terraform Validate ─────────────────────
         stage('Terraform Validate') {
             steps {
