@@ -3,8 +3,9 @@
 // ──────────────────────────────────────────────────────────────
 // Prerequisites (configure in Jenkins):
 //   1. Install "Terraform" plugin or add terraform to PATH
-//   2. Create AWS credentials (ID: 'aws-credentials') as
-//      Secret text or AWS Credentials binding
+//   2. Create two Secret Text credentials in Jenkins:
+//        - ID: 'aws-access-key-id'     → your AWS Access Key
+//        - ID: 'aws-secret-access-key'  → your AWS Secret Key
 //   3. Configure a GitHub webhook for automatic triggers
 // ──────────────────────────────────────────────────────────────
 
@@ -12,9 +13,11 @@ pipeline {
     agent any
 
     environment {
-        TF_WORKING_DIR  = 'terraform-webapp'
-        AWS_REGION      = 'ap-south-1'
-        TF_IN_AUTOMATION = 'true'
+        TF_WORKING_DIR     = '.'
+        AWS_DEFAULT_REGION = 'ap-south-1'
+        TF_IN_AUTOMATION   = 'true'
+        AWS_ACCESS_KEY_ID     = credentials('aws-access-key-id')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
     }
 
     parameters {
@@ -47,18 +50,13 @@ pipeline {
         // ── Stage 2: Terraform Init ─────────────────────────
         stage('Terraform Init') {
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
-                                  credentialsId: 'aws-credentials',
-                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                    dir("${TF_WORKING_DIR}") {
-                        sh '''
-                            echo "══════════════════════════════════════"
-                            echo "  Terraform Init"
-                            echo "══════════════════════════════════════"
-                            terraform init -input=false
-                        '''
-                    }
+                dir("${TF_WORKING_DIR}") {
+                    sh '''
+                        echo "══════════════════════════════════════"
+                        echo "  Terraform Init"
+                        echo "══════════════════════════════════════"
+                        terraform init -input=false
+                    '''
                 }
             }
         }
@@ -94,22 +92,17 @@ pipeline {
         // ── Stage 5: Terraform Plan ─────────────────────────
         stage('Terraform Plan') {
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
-                                  credentialsId: 'aws-credentials',
-                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                    dir("${TF_WORKING_DIR}") {
-                        sh """
-                            echo "══════════════════════════════════════"
-                            echo "  Terraform Plan"
-                            echo "══════════════════════════════════════"
-                            terraform plan \
-                                -var='instance_type=${params.INSTANCE_TYPE}' \
-                                -var='docker_image=${params.DOCKER_IMAGE}' \
-                                -input=false \
-                                -out=tfplan
-                        """
-                    }
+                dir("${TF_WORKING_DIR}") {
+                    sh """
+                        echo "══════════════════════════════════════"
+                        echo "  Terraform Plan"
+                        echo "══════════════════════════════════════"
+                        terraform plan \
+                            -var='instance_type=${params.INSTANCE_TYPE}' \
+                            -var='docker_image=${params.DOCKER_IMAGE}' \
+                            -input=false \
+                            -out=tfplan
+                    """
                 }
             }
         }
@@ -131,18 +124,13 @@ pipeline {
                 expression { return params.ACTION == 'apply' }
             }
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
-                                  credentialsId: 'aws-credentials',
-                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                    dir("${TF_WORKING_DIR}") {
-                        sh '''
-                            echo "══════════════════════════════════════"
-                            echo "  Terraform Apply"
-                            echo "══════════════════════════════════════"
-                            terraform apply -auto-approve -input=false tfplan
-                        '''
-                    }
+                dir("${TF_WORKING_DIR}") {
+                    sh '''
+                        echo "══════════════════════════════════════"
+                        echo "  Terraform Apply"
+                        echo "══════════════════════════════════════"
+                        terraform apply -auto-approve -input=false tfplan
+                    '''
                 }
             }
         }
@@ -153,21 +141,16 @@ pipeline {
                 expression { return params.ACTION == 'destroy' }
             }
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
-                                  credentialsId: 'aws-credentials',
-                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                    dir("${TF_WORKING_DIR}") {
-                        sh """
-                            echo "══════════════════════════════════════"
-                            echo "  Terraform Destroy"
-                            echo "══════════════════════════════════════"
-                            terraform destroy \
-                                -var='instance_type=${params.INSTANCE_TYPE}' \
-                                -var='docker_image=${params.DOCKER_IMAGE}' \
-                                -auto-approve -input=false
-                        """
-                    }
+                dir("${TF_WORKING_DIR}") {
+                    sh """
+                        echo "══════════════════════════════════════"
+                        echo "  Terraform Destroy"
+                        echo "══════════════════════════════════════"
+                        terraform destroy \
+                            -var='instance_type=${params.INSTANCE_TYPE}' \
+                            -var='docker_image=${params.DOCKER_IMAGE}' \
+                            -auto-approve -input=false
+                    """
                 }
             }
         }
@@ -178,22 +161,17 @@ pipeline {
                 expression { return params.ACTION == 'apply' }
             }
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
-                                  credentialsId: 'aws-credentials',
-                                  accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                    dir("${TF_WORKING_DIR}") {
-                        sh '''
-                            echo "══════════════════════════════════════"
-                            echo "  Terraform Outputs"
-                            echo "══════════════════════════════════════"
-                            terraform output
-                            echo ""
-                            echo "  Application URL:"
-                            echo "  http://$(terraform output -raw instance_ip)"
-                            echo "══════════════════════════════════════"
-                        '''
-                    }
+                dir("${TF_WORKING_DIR}") {
+                    sh '''
+                        echo "══════════════════════════════════════"
+                        echo "  Terraform Outputs"
+                        echo "══════════════════════════════════════"
+                        terraform output
+                        echo ""
+                        echo "  Application URL:"
+                        echo "  http://$(terraform output -raw instance_ip)"
+                        echo "══════════════════════════════════════"
+                    '''
                 }
             }
         }
