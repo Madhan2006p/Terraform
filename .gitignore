@@ -1,0 +1,27 @@
+# ── Terraform ─────────────────────────────────
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.tfstate.lock.info
+
+# ── Sensitive files (NEVER commit) ───────────
+*.csv
+*.pem
+*.key
+terraform.tfvars
+
+# ── IDE / OS ─────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
