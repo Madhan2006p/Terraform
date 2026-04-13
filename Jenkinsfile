@@ -187,7 +187,7 @@ pipeline {
                         echo "══════════════════════════════════════"
                         echo "  Terraform Apply"
                         echo "══════════════════════════════════════"
-                        terraform apply -auto-approve -input=false tfplan
+                        terraform apply -auto-approve -input=false
                     '''
                 }
             }
