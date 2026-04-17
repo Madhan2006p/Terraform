@@ -86,12 +86,12 @@ pipeline {
                             echo "S3 public access block already in state, skipping."
                         fi
 
-                        # Import S3 website configuration
-                        if ! terraform state list 2>/dev/null | grep -q "module.s3.aws_s3_bucket_website_configuration.website"; then
-                            echo "Importing S3 website config..."
-                            terraform import module.s3.aws_s3_bucket_website_configuration.website madhan-terraform-bucket-2026-001 || true
+                        # Import S3 CORS configuration
+                        if ! terraform state list 2>/dev/null | grep -q "module.s3.aws_s3_bucket_cors_configuration.cors"; then
+                            echo "Importing S3 CORS config..."
+                            terraform import module.s3.aws_s3_bucket_cors_configuration.cors madhan-terraform-bucket-2026-001 || true
                         else
-                            echo "S3 website config already in state, skipping."
+                            echo "S3 CORS config already in state, skipping."
                         fi
 
                         # Import S3 bucket policy
@@ -102,16 +102,13 @@ pipeline {
                             echo "S3 bucket policy already in state, skipping."
                         fi
 
-                        # Import S3 objects
-                        if ! terraform state list 2>/dev/null | grep -q "module.s3.aws_s3_object.index"; then
-                            echo "Importing S3 index.html object..."
-                            terraform import module.s3.aws_s3_object.index madhan-terraform-bucket-2026-001/index.html || true
-                        fi
-
-                        if ! terraform state list 2>/dev/null | grep -q "module.s3.aws_s3_object.styles"; then
-                            echo "Importing S3 styles.css object..."
-                            terraform import module.s3.aws_s3_object.styles madhan-terraform-bucket-2026-001/styles.css || true
-                        fi
+                        # Import S3 image objects (1-9)
+                        for i in $(seq 1 9); do
+                            if ! terraform state list 2>/dev/null | grep -q "module.s3.aws_s3_object.image_${i}"; then
+                                echo "Importing S3 image ${i}.png..."
+                                terraform import "module.s3.aws_s3_object.image_${i}" "madhan-terraform-bucket-2026-001/images/${i}.png" || true
+                            fi
+                        done
 
                         echo "Import complete."
                     '''
@@ -226,8 +223,14 @@ pipeline {
                         echo "══════════════════════════════════════"
                         terraform output
                         echo ""
-                        echo "  Application URL:"
+                        echo "  Home Page:"
                         echo "  http://$(terraform output -raw instance_ip)"
+                        echo ""
+                        echo "  AutoServe Pro Profile:"
+                        echo "  http://$(terraform output -raw instance_ip)/madhan-profile/"
+                        echo ""
+                        echo "  S3 Image Bucket:"
+                        echo "  $(terraform output -raw s3_image_bucket)"
                         echo "══════════════════════════════════════"
                     '''
                 }

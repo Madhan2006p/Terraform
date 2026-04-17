@@ -13,7 +13,17 @@ output "instance_id" {
   value       = module.ec2.instance_id
 }
 
-output "s3_website_url" {
-  description = "S3 static website URL"
-  value       = module.s3.website_url
+output "s3_image_bucket" {
+  description = "S3 bucket URL for project images"
+  value       = module.s3.bucket_regional_domain
+}
+
+output "app_url" {
+  description = "Main application URL"
+  value       = "http://${module.ec2.public_ip}"
+}
+
+output "profile_url" {
+  description = "AutoServe Pro profile page URL"
+  value       = "http://${module.ec2.public_ip}/madhan-profile/"
 }

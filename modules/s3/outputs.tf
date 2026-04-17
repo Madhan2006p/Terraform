@@ -2,6 +2,7 @@ output "bucket_name" {
   value = aws_s3_bucket.bucket.id
 }
 
-output "website_url" {
-  value = "http://${aws_s3_bucket_website_configuration.website.website_endpoint}"
+output "bucket_regional_domain" {
+  description = "S3 bucket regional domain for accessing images"
+  value       = "https://${aws_s3_bucket.bucket.bucket_regional_domain_name}"
 }

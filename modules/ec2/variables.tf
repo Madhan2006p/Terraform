@@ -19,3 +19,9 @@ variable "docker_image" {
   type        = string
   default     = "nginx:alpine"
 }
+
+variable "s3_bucket_url" {
+  description = "S3 bucket URL for serving project images"
+  type        = string
+  default     = ""
+}
