@@ -102,6 +102,15 @@ resource "aws_s3_object" "image_9" {
   etag         = filemd5("${path.root}/images/9.png")
 }
 
+# ── Upload Profile Page HTML ─────────────────────────────────
+resource "aws_s3_object" "profile_page" {
+  bucket       = aws_s3_bucket.bucket.id
+  key          = "profile.html"
+  source       = "${path.root}/profile.html"
+  content_type = "text/html"
+  etag         = filemd5("${path.root}/profile.html")
+}
+
 # ── Public Read Policy ──────────────────────────────────────
 resource "aws_s3_bucket_policy" "public_read" {
   bucket = aws_s3_bucket.bucket.id
